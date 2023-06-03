@@ -23,15 +23,27 @@ defmodule StickerClient.ValidatorTest do
 
   test "can error on invalid URL" do
     assert parse_download_url(@invalid_url) ==
-             {:error, "Invalid format, Pack ID and Key could not be parsed"}
+             {:error,
+              %StickerClient.Exception{
+                message: "Invalid format, Pack ID and Key could not be parsed"
+              }}
 
     assert parse_download_url("https://google.ca") ==
-             {:error, "Invalid format, Pack ID and Key could not be parsed"}
+             {:error,
+              %StickerClient.Exception{
+                message: "Invalid format, Pack ID and Key could not be parsed"
+              }}
 
     assert parse_download_url(@missing_id_url) ==
-             {:error, "Invalid format, Pack ID and Key could not be parsed"}
+             {:error,
+              %StickerClient.Exception{
+                message: "Invalid format, Pack ID and Key could not be parsed"
+              }}
 
     assert parse_download_url(@missing_key_url) ==
-             {:error, "Invalid format, Pack ID and Key could not be parsed"}
+             {:error,
+              %StickerClient.Exception{
+                message: "Invalid format, Pack ID and Key could not be parsed"
+              }}
   end
 end

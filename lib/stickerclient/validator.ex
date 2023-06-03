@@ -15,14 +15,20 @@ defmodule StickerClient.Validator do
 
       # Typo in pack_key
       iex> parse_download_url("https://signal.art/addstickers/#pack_id=45bdc863f62e6a2548052e0a0c4cb153&pack_ke=9dc85e4d5d65d0b272274e5bd4f047fcda3551e77f89053c06078ace81fa6a41")  
-      {:error, "Invalid format, Pack ID and Key could not be parsed"}
+      {:error, %StickerClient.Exception{message: "Invalid format, Pack ID and Key could not be parsed"}}
   """
+  @spec parse_download_url(url :: String.t()) ::
+          {:ok, String.t(), String.t()} | {:error, StickerClient.Error.t()}
   def parse_download_url(url) when is_bitstring(url) do
     captures = Regex.named_captures(@download_url_pattern, url)
 
     case captures do
-      %{"pack_id" => pack_id, "pack_key" => pack_key} -> {:ok, pack_id, pack_key}
-      _ -> {:error, "Invalid format, Pack ID and Key could not be parsed"}
+      %{"pack_id" => pack_id, "pack_key" => pack_key} ->
+        {:ok, pack_id, pack_key}
+
+      _ ->
+        {:error,
+         StickerClient.Exception.new("Invalid format, Pack ID and Key could not be parsed")}
     end
   end
 end
