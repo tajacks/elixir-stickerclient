@@ -36,7 +36,8 @@ defmodule StickerClient.MixProject do
       {:protobuf, "~> 0.11.0"},
       {:ex_doc, "~> 0.27", only: :dev, runtime: false},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
-      {:excoveralls, "~> 0.10", only: :test}
+      {:excoveralls, "~> 0.10", only: :test},
+      {:mox, "~> 1.0.2", only: :test}
     ]
   end
 
