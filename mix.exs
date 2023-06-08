@@ -40,7 +40,7 @@ defmodule StickerClient.MixProject do
     [
       {:hkdf, "~> 0.2.0"},
       {:req, "~> 0.3.6"},
-      {:protobuf, "~> 0.11.0"},
+      {:protobuf, "~> 0.12.0"},
       {:ex_doc, "~> 0.27", only: :dev, runtime: false},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.10", only: :test},
