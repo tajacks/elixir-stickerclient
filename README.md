@@ -12,7 +12,7 @@ This package can be installed by adding `stickerclient` to your list of dependen
 ```elixir
 def deps do
   [
-    {:stickerclient, "~> 0.1.0"}
+    {:stickerclient, "~> 0.2.0"}
   ]
 end
 ```
