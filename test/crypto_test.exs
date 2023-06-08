@@ -21,10 +21,10 @@ defmodule StickerClient.CryptoTest do
   test "can decrypt given key and matches known decrypted content" do
     assert decrypt_content(
              @encrypted_manifest,
-             @pack_key) == {:ok, @unencrypted_manifest}
+             @pack_key
+           ) == {:ok, @unencrypted_manifest}
 
-    {:ok, {aes, hmac}} =
-      derive_keys(@pack_key)
+    {:ok, {aes, hmac}} = derive_keys(@pack_key)
 
     assert decrypt_content(@encrypted_manifest, aes, hmac) == {:ok, @unencrypted_manifest}
   end
@@ -32,6 +32,11 @@ defmodule StickerClient.CryptoTest do
   test "error message when unable to validate content" do
     {:ok, {aes, hmac}} = derive_keys(@pack_key)
     decrypt_result = decrypt_content(<<82, 73, 70, 70>>, aes, hmac)
-    assert decrypt_result == {:error, %StickerClient.Exception{message: "Integrity of the content could not be validated with the given HMAC key"}}
+
+    assert decrypt_result ==
+             {:error,
+              %StickerClient.Exception{
+                message: "Integrity of the content could not be validated with the given HMAC key"
+              }}
   end
 end
