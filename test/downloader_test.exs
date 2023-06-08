@@ -33,9 +33,11 @@ defmodule DownloaderTest do
 
   test "can download sticker" do
     StickerClient.HTTPAdapterMock
-    |> expect(:perform_get, fn _url -> {:ok, %{status: 200, body: @downloaded_sticker}} end)
+    |> expect(:perform_get, 2, fn _url -> {:ok, %{status: 200, body: @downloaded_sticker}} end)
 
     {:ok, response} = StickerClient.Downloader.download_sticker(10, @test_id, @test_key)
+    {:ok, alt_response = StickerClient.Downloader.download_stickers([10], @test_id, @test_key)}
+    assert response == hd(alt_response)
     assert response.id == 10
     assert response.emoji == nil
     assert response.data != nil
