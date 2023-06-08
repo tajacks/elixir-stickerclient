@@ -21,11 +21,11 @@ defmodule StickerClient.Downloader do
   The URL takes the format of `https://signal.arwt/addstickers/#pack_id=PACK_ID&pack_key=PACK_KEY`. 
   """
   @spec download_pack(url :: bitstring(), options :: keyword()) ::
-          {:ok, StickerClient.Pack.t()} | {:error, bitstring()}
+          {:ok, StickerClient.Pack.t()} | {:error, StickerClient.Exception.t()}
   def download_pack(url, opts \\ []) when is_binary(url) do
     case Validator.parse_download_url(url) do
       {:ok, pack_id, pack_key} -> download_pack(pack_id, pack_key, opts)
-      _ -> {:error, "Pack ID and Key could not be parsed"}
+      _ -> {:error, StickerClient.Exception.new("Pack ID and Key could not be parsed")}
     end
   end
 
@@ -33,7 +33,7 @@ defmodule StickerClient.Downloader do
   Download a pack from the given Pack Key and Pack ID, providing concurrency settings.
   """
   @spec download_pack(pack_id :: bitstring(), pack_key :: bitstring(), options :: keyword()) ::
-          {:ok, StickerClient.Pack.t()} | {:error, bitstring()}
+          {:ok, StickerClient.Pack.t()} | {:error, StickerClient.Exception.t()}
   def download_pack(pack_id, pack_key, opts) when is_binary(pack_id) and is_binary(pack_key) do
     with {:ok, {aes, hmac}} <- Crypto.derive_keys(pack_key),
          {:ok, manifest} <- download_manifest(pack_id, aes, hmac),
@@ -48,7 +48,7 @@ defmodule StickerClient.Downloader do
   The downloaded manifest will not contain Sticker data, only Sticker metadata.
   """
   @spec download_manifest(pack_id :: bitstring(), pack_key :: bitstring()) ::
-          {:ok, StickerClient.Pack.t()} | {:error, bitstring()}
+          {:ok, StickerClient.Pack.t()} | {:error, StickerClient.Exception.t()}
   def download_manifest(pack_id, pack_key) when is_binary(pack_id) and is_binary(pack_key) do
     case Crypto.derive_keys(pack_key) do
       {:ok, {aes, hmac}} -> download_manifest(pack_id, aes, hmac)
@@ -70,7 +70,7 @@ defmodule StickerClient.Downloader do
           sticker :: StickerClient.Sticker.t(),
           pack_id :: bitstring(),
           pack_key :: bitstring()
-        ) :: {:ok, StickerClient.Sticker.t()} | {:error, bitstring()}
+        ) :: {:ok, StickerClient.Sticker.t()} | {:error, StickerClient.Exception.t()}
   def download_sticker(%StickerClient.Sticker{} = sticker, pack_id, pack_key) do
     case Crypto.derive_keys(pack_key) do
       {:ok, {aes, hmac}} -> _download_sticker(sticker, pack_id, aes, hmac)
@@ -79,11 +79,11 @@ defmodule StickerClient.Downloader do
   end
 
   @spec download_sticker(sticker_id :: integer(), pack_id :: bitstring(), pack_key :: bitstring()) ::
-          {:ok, StickerClient.Sticker.t()} | {:error, bitstring()}
+          {:ok, StickerClient.Sticker.t()} | {:error, StickerClient.Exception.t()}
   def download_sticker(sticker_id, pack_id, pack_key) do
     case Crypto.derive_keys(pack_key) do
       {:ok, {aes, hmac}} -> _download_sticker(sticker_id, pack_id, aes, hmac)
-      _ -> {:error, "Unable to derive AES and HMAC Keys"}
+      _ -> {:error, StickerClient.Exception.new("Unable to derive AES and HMAC Keys")}
     end
   end
 
@@ -95,15 +95,15 @@ defmodule StickerClient.Downloader do
   metadata. 
   """
   @spec download_stickers(
-          stickers :: [integer() | StickerClient.Sticker.t()],
+          stickers :: [StickerClient.Sticker.t()] | [integer()],
           pack_id :: bitstring(),
           pack_key :: bitstring(),
           options :: keyword()
-        ) :: [StickerClient.Sticker.t()]
+        ) :: [StickerClient.Sticker.t()] | {:error, StickerClient.Exception.t()}
   def download_stickers(stickers, pack_id, pack_key, opts \\ []) do
     case Crypto.derive_keys(pack_key) do
       {:ok, {aes, hmac}} -> _download_stickers(stickers, pack_id, aes, hmac, opts)
-      _ -> {:error, "Unable to derive AES and HMAC Keys"}
+      _ -> {:error, StickerClient.Exception.new("Unable to derive AES and HMAC Keys")}
     end
   end
 
