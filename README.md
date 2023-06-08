@@ -1,5 +1,8 @@
 # Stickerclient
 
+[![Build and Test](https://github.com/tajacks/elixir-stickerclient/actions/workflows/elixir-build-and-test.yml/badge.svg?branch=main)](https://github.com/tajacks/elixir-stickerclient/actions/workflows/elixir-build-and-test.yml)
+[![Coverage Status](https://coveralls.io/repos/github/tajacks/elixir-stickerclient/badge.svg?branch=main)](https://coveralls.io/github/tajacks/elixir-stickerclient?branch=main)
+
 StickerClient is an Elixir library for interfacing with the Signal Stickers API. 
 
 ## Installation
