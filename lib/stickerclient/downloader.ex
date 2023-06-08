@@ -4,6 +4,7 @@ defmodule StickerClient.Downloader do
   including Pack information and Stickers. 
   """
 
+  alias StickerClient.HTTPClient
   alias StickerClient.Crypto
   alias StickerClient.Validator
   alias StickerClient.Mapper
@@ -20,19 +21,19 @@ defmodule StickerClient.Downloader do
   The URL takes the format of `https://signal.arwt/addstickers/#pack_id=PACK_ID&pack_key=PACK_KEY`. 
   """
   @spec download_pack(url :: bitstring(), options :: keyword()) ::
-          {:ok, StickerClient.Pack.t()} | {:error, bitstring()}
+          {:ok, StickerClient.Pack.t()} | {:error, StickerClient.Exception.t()}
   def download_pack(url, opts \\ []) when is_binary(url) do
     case Validator.parse_download_url(url) do
       {:ok, pack_id, pack_key} -> download_pack(pack_id, pack_key, opts)
-      _ -> {:error, "Pack ID and Key could not be parsed"}
+      _ -> {:error, StickerClient.Exception.new("Pack ID and Key could not be parsed")}
     end
   end
 
   @doc """
-  Download a pack from the given Pack Key and Pack ID, providing concurrenycy settings.
+  Download a pack from the given Pack Key and Pack ID, providing concurrency settings.
   """
   @spec download_pack(pack_id :: bitstring(), pack_key :: bitstring(), options :: keyword()) ::
-          {:ok, StickerClient.Pack.t()} | {:error, bitstring()}
+          {:ok, StickerClient.Pack.t()} | {:error, StickerClient.Exception.t()}
   def download_pack(pack_id, pack_key, opts) when is_binary(pack_id) and is_binary(pack_key) do
     with {:ok, {aes, hmac}} <- Crypto.derive_keys(pack_key),
          {:ok, manifest} <- download_manifest(pack_id, aes, hmac),
@@ -47,7 +48,7 @@ defmodule StickerClient.Downloader do
   The downloaded manifest will not contain Sticker data, only Sticker metadata.
   """
   @spec download_manifest(pack_id :: bitstring(), pack_key :: bitstring()) ::
-          {:ok, StickerClient.Pack.t()} | {:error, bitstring()}
+          {:ok, StickerClient.Pack.t()} | {:error, StickerClient.Exception.t()}
   def download_manifest(pack_id, pack_key) when is_binary(pack_id) and is_binary(pack_key) do
     case Crypto.derive_keys(pack_key) do
       {:ok, {aes, hmac}} -> download_manifest(pack_id, aes, hmac)
@@ -61,7 +62,7 @@ defmodule StickerClient.Downloader do
   @doc """
   Download a sticker, providing either a sticker ID as integer, or, a `StickerClient.Sticker` with a set ID. 
 
-  The downloaded sticker will not have metadata such as the assosciated emoji if a 
+  The downloaded sticker will not have metadata such as the associated emoji if a 
   numeric ID is given, or if the provided `StickerClient.Sticker` also does not contain
   metadata. 
   """
@@ -69,7 +70,7 @@ defmodule StickerClient.Downloader do
           sticker :: StickerClient.Sticker.t(),
           pack_id :: bitstring(),
           pack_key :: bitstring()
-        ) :: {:ok, StickerClient.Sticker.t()} | {:error, bitstring()}
+        ) :: {:ok, StickerClient.Sticker.t()} | {:error, StickerClient.Exception.t()}
   def download_sticker(%StickerClient.Sticker{} = sticker, pack_id, pack_key) do
     case Crypto.derive_keys(pack_key) do
       {:ok, {aes, hmac}} -> _download_sticker(sticker, pack_id, aes, hmac)
@@ -78,36 +79,38 @@ defmodule StickerClient.Downloader do
   end
 
   @spec download_sticker(sticker_id :: integer(), pack_id :: bitstring(), pack_key :: bitstring()) ::
-          {:ok, StickerClient.Sticker.t()} | {:error, bitstring()}
+          {:ok, StickerClient.Sticker.t()} | {:error, StickerClient.Exception.t()}
   def download_sticker(sticker_id, pack_id, pack_key) do
     case Crypto.derive_keys(pack_key) do
       {:ok, {aes, hmac}} -> _download_sticker(sticker_id, pack_id, aes, hmac)
-      _ -> {:error, "Unable to derive AES and HMAC Keys"}
+      _ -> {:error, StickerClient.Exception.new("Unable to derive AES and HMAC Keys")}
     end
   end
 
   @doc """
   Downloads multiple stickers, providing an enumerable containing sticker IDs as integers, or,`StickerClient.Sticker`'s, with set IDs
 
-  The downloaded sticker will not have metadata such as the assosciated emoji if a 
+  The downloaded sticker will not have metadata such as the associated emoji if a 
   numeric ID is given, or if the provided `StickerClient.Sticker` also does not contain
   metadata. 
   """
   @spec download_stickers(
-          stickers :: [integer() | StickerClient.Sticker.t()],
+          stickers :: [StickerClient.Sticker.t()] | [integer()],
           pack_id :: bitstring(),
           pack_key :: bitstring(),
           options :: keyword()
-        ) :: [StickerClient.Sticker.t()]
+        ) :: [StickerClient.Sticker.t()] | {:error, StickerClient.Exception.t()}
   def download_stickers(stickers, pack_id, pack_key, opts \\ []) do
     case Crypto.derive_keys(pack_key) do
       {:ok, {aes, hmac}} -> _download_stickers(stickers, pack_id, aes, hmac, opts)
-      _ -> {:error, "Unable to derive AES and HMAC Keys"}
+      _ -> {:error, StickerClient.Exception.new("Unable to derive AES and HMAC Keys")}
     end
   end
 
   defp download_manifest(pack_id, aes_key, hmac_key) do
-    with {:ok, encrypted_manifest} <- pack_id |> manifest_url() |> get(),
+    alias StickerClient.HTTPClient
+
+    with {:ok, encrypted_manifest} <- pack_id |> manifest_url() |> HTTPClient.get(),
          {:ok, decrypted_manifest} <-
            Crypto.decrypt_content(encrypted_manifest, aes_key, hmac_key),
          manifest_proto <- StickerClient.Protos.Pack.decode(decrypted_manifest),
@@ -131,7 +134,7 @@ defmodule StickerClient.Downloader do
   end
 
   defp _download_sticker(sticker_id, pack_id, aes_key, hmac_key) when is_integer(sticker_id) do
-    with {:ok, encrypted_sticker} <- sticker_url(pack_id, sticker_id) |> get(),
+    with {:ok, encrypted_sticker} <- sticker_url(pack_id, sticker_id) |> HTTPClient.get(),
          {:ok, decrypted_sticker} <- Crypto.decrypt_content(encrypted_sticker, aes_key, hmac_key) do
       {:ok, %StickerClient.Sticker{id: sticker_id, data: decrypted_sticker}}
     end
@@ -152,18 +155,6 @@ defmodule StickerClient.Downloader do
     |> Stream.filter(&match?({:ok, {:ok, _}}, &1))
     |> Stream.map(fn {_, {_, body}} -> body end)
     |> Enum.to_list()
-  end
-
-  # Execute an HTTP GET, trusting the System CA Certs
-  # Only returns :ok if the status code is a 200 series
-  defp get(url) do
-    results =
-      Req.get(url, connect_options: [transport_opts: [cacerts: :public_key.cacerts_get()]])
-
-    case results do
-      {:ok, %{:status => code, :body => body}} when div(code, 100) == 2 -> {:ok, body}
-      _ -> {:error, "Unable to make successful HTTP call"}
-    end
   end
 
   @doc false

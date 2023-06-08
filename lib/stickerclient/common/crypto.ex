@@ -15,6 +15,8 @@ defmodule StickerClient.Crypto do
   derive the keys once, then decrypting and validating all content by providing 
   those keys, as well as the encrypted content, to this method. 
   """
+  @spec decrypt_content(binary(), String.t(), String.t()) ::
+          {:ok, binary()} | {:error, StickerClient.Exception.t()}
   def decrypt_content(encrypted_content, aes_key, hmac_key) do
     {content_iv, content_body, content_hmac} = slice_decryption_segments(encrypted_content)
 
@@ -23,8 +25,11 @@ defmodule StickerClient.Crypto do
         :crypto.crypto_one_time(:aes_256_cbc, aes_key, content_iv, content_body, false)
         |> (&{:ok, unpad(&1)}).()
 
-      false ->
-        {:error, "Integrity of the content could not be validated with the given HMAC key"}
+      _ ->
+        {:error,
+         StickerClient.Exception.new(
+           "Integrity of the content could not be validated with the given HMAC key"
+         )}
     end
   end
 
@@ -38,6 +43,8 @@ defmodule StickerClient.Crypto do
   the same pack, consider instead deriving the keys once and passing those keys to 
   `StickerClient.Crypto.decrypt_content/3` instead.
   """
+  @spec decrypt_content(binary(), String.t()) ::
+          {:ok, binary()} | {:error, StickerClient.Exception.t()}
   def decrypt_content(encrypted_content, key) do
     with {:ok, {aes, hmac}} <- derive_keys(key) do
       decrypt_content(encrypted_content, aes, hmac)
@@ -64,10 +71,11 @@ defmodule StickerClient.Crypto do
         140, 58, 98, 2, 68, 110, 40, 98, 252, 58, 176, 55, 15, 149, 227>>}}
 
       iex(1)> StickerClient.Crypto.derive_keys("15e4af51e09951fc15b548d1dfc1267d0f56bcf7e339b7d")
-      {:error, "Invalid key size. Expected 64 bytes."}
+      {:error, %StickerClient.Exception{message: "Invalid key size. Expected 64 bytes."}}
 
   """
-  @spec derive_keys(String.t()) :: {:ok | :error, {String.t(), String.t()} | String.t()}
+  @spec derive_keys(String.t()) ::
+          {:ok, {binary(), binary()}} | {:error, StickerClient.Exception.t()}
   def derive_keys(pack_key) when is_binary(pack_key) do
     with {:ok, input_key_material} <- String.downcase(pack_key) |> Base.decode16(case: :lower) do
       HKDF.derive(:sha256, input_key_material, 512, "", @decrypt_info)
@@ -82,7 +90,8 @@ defmodule StickerClient.Crypto do
     {:ok, {aes, hmac}}
   end
 
-  defp slice_aes_hmac_keys(_joined_key), do: {:error, "Invalid key size. Expected 64 bytes."}
+  defp slice_aes_hmac_keys(_joined_key),
+    do: {:error, StickerClient.Exception.new("Invalid key size. Expected 64 bytes.")}
 
   # IV = 16 Bytes, Body = Variable Bytes, HMAC = Last 32 Bytes
   defp slice_decryption_segments(binary) do
@@ -92,8 +101,13 @@ defmodule StickerClient.Crypto do
     {iv, body, hmac}
   end
 
-  defp validate_hmac(given_binary, given_hmac, hmac_key),
-    do: :crypto.mac(:hmac, :sha256, hmac_key, given_binary) |> :crypto.hash_equals(given_hmac)
+  defp validate_hmac(given_binary, given_hmac, hmac_key) do
+    try do
+      :crypto.mac(:hmac, :sha256, hmac_key, given_binary) |> :crypto.hash_equals(given_hmac)
+    catch
+      _t, _v -> false
+    end
+  end
 
   # Removes AES CBC Padding
   defp unpad(binary) do
