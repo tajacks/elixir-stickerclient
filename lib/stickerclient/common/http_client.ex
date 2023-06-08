@@ -1,6 +1,12 @@
 defmodule StickerClient.HTTPClient do
-  
-  @spec get(String.t) :: {:ok, String.t} | {:error, StickerClient.Exception.t}
+  @moduledoc false
+
+  @doc """
+  Perform a GET request to the given URL.
+
+  Returns the response body as a string if the request was successful, or an Exception otherwise.
+  """
+  @spec get(String.t()) :: {:ok, String.t()} | {:error, StickerClient.Exception.t()}
   def get(url) do
     results = adapter().perform_get(url)
 

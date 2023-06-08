@@ -26,7 +26,10 @@ defmodule StickerClient.Crypto do
         |> (&{:ok, unpad(&1)}).()
 
       _ ->
-        {:error, StickerClient.Exception.new("Integrity of the content could not be validated with the given HMAC key")}
+        {:error,
+         StickerClient.Exception.new(
+           "Integrity of the content could not be validated with the given HMAC key"
+         )}
     end
   end
 
@@ -98,10 +101,11 @@ defmodule StickerClient.Crypto do
     {iv, body, hmac}
   end
 
-  defp validate_hmac(given_binary, given_hmac, hmac_key) do 
-    try do  
+  defp validate_hmac(given_binary, given_hmac, hmac_key) do
+    try do
       :crypto.mac(:hmac, :sha256, hmac_key, given_binary) |> :crypto.hash_equals(given_hmac)
-    catch _t, _v -> false
+    catch
+      _t, _v -> false
     end
   end
 
