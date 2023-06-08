@@ -5,7 +5,7 @@ defmodule StickerClient.MixProject do
     [
       app: :stickerclient,
       description: "An Elixir library for interfacing with the Signal Stickers API",
-      version: "0.1.0",
+      version: "0.2.0",
       source_url: "https://github.com/tajacks/elixir-stickerclient",
       homepage_url: "https://github.com/tajacks/elixir-stickerclient",
       elixir: "~> 1.14",
