@@ -18,7 +18,7 @@ defmodule StickerClient.Validator do
       {:error, %StickerClient.Exception{message: "Invalid format, Pack ID and Key could not be parsed"}}
   """
   @spec parse_download_url(url :: String.t()) ::
-          {:ok, String.t(), String.t()} | {:error, StickerClient.Error.t()}
+          {:ok, String.t(), String.t()} | {:error, StickerClient.Exception.t()}
   def parse_download_url(url) when is_bitstring(url) do
     captures = Regex.named_captures(@download_url_pattern, url)
 
