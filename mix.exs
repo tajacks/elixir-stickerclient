@@ -39,13 +39,13 @@ defmodule StickerClient.MixProject do
   defp deps do
     [
       {:hkdf, "~> 0.2.0"},
-      {:req, "~> 0.3.6"},
-      {:protobuf, "~> 0.11.0"},
-      {:ex_doc, "~> 0.27", only: :dev, runtime: false},
+      {:req, "~> 0.4.2"},
+      {:protobuf, "~> 0.12.0"},
+      {:ex_doc, "~> 0.30.6", only: :dev, runtime: false},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
-      {:excoveralls, "~> 0.10", only: :test},
+      {:excoveralls, "~> 0.17.1", only: :test},
       {:mox, "~> 1.0.2", only: :test},
-      {:dialyxir, "~> 1.2", only: [:dev, :test], runtime: false}
+      {:dialyxir, "~> 1.4.1", only: [:dev, :test], runtime: false}
     ]
   end
 
